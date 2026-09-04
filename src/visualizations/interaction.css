@@ -1,0 +1,137 @@
+.interaction-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+}
+.interaction-toolbar { flex-wrap: wrap; }
+.interaction-view-select { display: flex; align-items: center; gap: 10px; color: #aac4d3; font-size: 0.875rem; }
+.interaction-view-select select {
+  max-width: 160px;
+  padding: 7px 10px;
+  color: #f0faff;
+  background: #0c293b;
+  border: 1px solid #2b4c60;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.interaction-scene { position: relative; flex: 1; height: 550px; min-height: 550px; overflow: hidden; }
+.cut-tabs { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.cut-tabs button {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 34px; padding: 7px 10px;
+  color: #d8e9f3; background: #071a29eF; border: 1px solid #314758;
+  border-radius: 6px; font-size: 0.875rem; cursor: pointer;
+}
+.cut-tabs button[aria-pressed="true"] { border-color: var(--cut-color); background: #123248; color: #fff; }
+.cut-swatch { display: inline-block; flex: 0 0 auto; width: 16px; height: 3px; background: var(--cut-color); border-radius: 2px; }
+.interaction-axis-tick { color: #bed1df; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px #031019; }
+.interaction-axis-name { padding: 3px 5px; color: #eaf7ff; background: #06131fe8; border-radius: 3px; font-size: 13px; white-space: nowrap; }
+.interaction-color-key {
+  position: absolute; bottom: 15px; left: 16px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; width: 155px;
+  color: #cde0ec; font-size: 12px; pointer-events: none;
+}
+.interaction-color-key > span:first-child { grid-column: 1 / -1; color: #eaf7ff; font-weight: 650; }
+.interaction-color-key > div { grid-column: 1 / -1; height: 10px; border-radius: 2px; background: linear-gradient(90deg,#413bff,#008cff,#00e5ff,#00ed9a,#c5ff24,#ffb300,#ff2355); }
+.interaction-color-key > span:last-child { text-align: right; }
+.interaction-hint { position: absolute; bottom: 15px; right: 16px; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; max-width: 180px; color: #afc6d4; font-size: 12px; pointer-events: none; }
+.interaction-hint span { flex-basis: 100%; text-align: right; color: #e1eef5; }
+.point-inspector { flex: 0 0 auto; padding: 12px 18px 14px; color: #d7e7f1; background: #0a2030; border-top: 1px solid #244357; }
+.point-inspector-heading { display: flex; align-items: center; justify-content: space-between; min-height: 22px; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+.point-inspector-heading > span { display: flex; align-items: center; gap: 7px; }
+.point-inspector-heading button { display: grid; place-items: center; flex: 0 0 auto; width: 28px; height: 24px; color: #d5e9f3; background: #15364a; border: 1px solid #2a4c62; border-radius: 4px; cursor: pointer; }
+.point-values { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.point-values b { padding-inline: 4px; color: #fff; font-size: 18px; font-weight: 650; }
+.point-values small { color: #a8c3d3; font-size: 12px; }
+.interaction-controls { min-width: 0; padding: 18px; background: #f8fbfd; border-left: 1px solid var(--line); }
+.interaction-controls-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+.interaction-controls-heading h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 700; }
+.interaction-controls-heading > button { display: grid; place-items: center; width: 28px; height: 28px; padding: 4px; color: #365b70; background: transparent; border: 1px solid #cadbe5; border-radius: 5px; cursor: pointer; }
+.cut-control { margin-bottom: 10px; padding: 11px 12px; border: 1px solid #d9e5eb; border-left: 3px solid var(--cut-color); background: #fff; border-radius: 7px; }
+.cut-control.is-active { background: #edf6fb; border-top-color: #b6d2e2; border-right-color: #b6d2e2; border-bottom-color: #b6d2e2; }
+.cut-control-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cut-control-heading button { display: flex; align-items: center; gap: 7px; padding: 0; color: #183449; background: transparent; border: 0; font-size: 14px; font-weight: 650; cursor: pointer; text-align: left; }
+.cut-control-heading > span { color: #547083; font-size: 12px; white-space: nowrap; }
+.cut-control-heading .cut-swatch { width: 10px; height: 10px; border-radius: 3px; }
+.cut-number-row { display: flex; align-items: center; gap: 7px; margin-top: 10px; color: #426173; font-size: 14px; }
+.cut-number-row input { width: 112px; min-width: 0; padding: 4px 6px; color: #09253a; background: #fff; border: 1px solid #b8ccd9; border-radius: 4px; font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.cut-number-row > button { margin-left: auto; padding: 4px 7px; color: #456171; background: transparent; border: 1px solid #cbdae3; border-radius: 4px; font-size: 12px; cursor: pointer; }
+.cut-slider { margin-block: 10px 3px; }
+.cut-range-labels { display: flex; justify-content: space-between; color: #607b8b; font-size: 12px; font-variant-numeric: tabular-nums; }
+.axial-presets { display: flex; gap: 5px; margin-top: 8px; }
+.axial-presets button { flex: 1; min-height: 25px; padding: 3px 5px; color: #214960; background: #e4f0f7; border: 1px solid #c6dae7; border-radius: 4px; font-size: 12px; cursor: pointer; }
+.axial-presets button:hover { background: #cce9f5; }
+.interaction-appearance { padding-top: 8px; }
+.interaction-appearance .range-control { margin-bottom: 12px; }
+.interaction-appearance .range-heading label { font-size: 14px; }
+.interaction-appearance .range-value { font-size: 14px; }
+.interaction-appearance .range-scale { display: none; }
+.interaction-toggles { display: grid; gap: 7px; }
+.interaction-toggles .layer-toggle { min-height: 25px; font-size: 14px; }
+.slice-chart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #091b29; border-top: 1px solid #24465b; }
+.slice-chart { min-width: 0; padding: 16px 14px 12px; color: #bed2df; border-top: 3px solid transparent; }
+.slice-chart + .slice-chart { border-left: 1px solid #284052; }
+.slice-chart.is-active { border-top-color: var(--cut-color); background: #0c2232; }
+.slice-chart > header { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 0 3px; }
+.slice-chart > header button { display: flex; align-items: center; gap: 8px; padding: 0; color: #eaf8ff; background: transparent; border: 0; cursor: pointer; }
+.slice-chart h3 { margin: 0; font-size: 17px; font-weight: 650; }
+.slice-chart > header > span { color: #d9edf8; font-size: 13px; font-variant-numeric: tabular-nums; }
+.slice-chart small { color: #aec6d5; font-size: 12px; }
+.slice-svg-wrap { min-width: 0; margin-top: 9px; }
+.slice-svg { display: block; overflow: visible; cursor: crosshair; touch-action: pan-y; }
+.slice-svg text { fill: #b9d0e0; font-size: 12px; font-variant-numeric: tabular-nums; }
+.slice-svg .chart-axis-title { fill: #e4f2fb; font-weight: 550; }
+.slice-readout { min-height: 35px; display: flex; align-items: center; margin-top: 7px; padding: 7px 8px; color: #a9c1d2; background: #081927; border-radius: 4px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.slice-readout b { color: #eef9ff; font-weight: 600; }
+.slice-readout span span { padding-inline: 3px; }
+.interaction-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 9px 20px; padding: 13px 20px; color: #536c7d; border-top: 1px solid #d5e1e9; font-size: 12px; }
+.interaction-caption details { flex-basis: 100%; }
+.interaction-caption summary { width: fit-content; cursor: pointer; color: #25647c; font-size: 14px; }
+.interaction-caption p { max-width: 1000px; margin: 10px 0 0; font-size: 14px; line-height: 1.6; }
+.interaction-loading { padding: 48px; color: #395c70; background: white; border-radius: 10px; text-align: center; }
+
+@media (max-width: 1120px) {
+  .interaction-main { grid-template-columns: minmax(0, 1fr) 320px; }
+  .interaction-controls { padding: 14px; }
+  .cut-control { padding-inline: 10px; }
+  .cut-control-heading { flex-wrap: wrap; gap: 3px; }
+  .slice-chart { padding-inline: 8px; }
+  .slice-chart > header { min-height: 45px; }
+}
+@media (max-width: 920px) {
+  .interaction-main { grid-template-columns: 1fr; }
+  .interaction-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-left: 0; }
+  .interaction-controls-heading, .interaction-appearance { grid-column: 1 / -1; }
+  .interaction-controls-heading { margin-bottom: 0; }
+  .cut-control { margin-bottom: 0; }
+  .cut-number-row { flex-wrap: wrap; }
+  .cut-number-row input { width: 100px; }
+  .interaction-appearance { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
+  .interaction-toggles { grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  .slice-chart-grid { grid-template-columns: 1fr; }
+  .slice-chart + .slice-chart { border-left: 0; border-top: 1px solid #284052; }
+  .slice-chart.is-active { border-top: 3px solid var(--cut-color); }
+  .slice-chart { padding: 16px; }
+  .slice-chart > header { min-height: 20px; }
+}
+@media (max-width: 600px) {
+  .interaction-controls { grid-template-columns: 1fr; }
+  .interaction-appearance { display: block; }
+  .interaction-toggles { grid-template-columns: 1fr; }
+  .interaction-scene { height: 460px; min-height: 460px; }
+  .interaction-controls-heading { margin-bottom: 4px; }
+  .cut-control-heading { flex-wrap: nowrap; }
+  .cut-tabs { gap: 5px; left: 8px; }
+  .cut-tabs button { padding: 7px 8px; font-size: 14px; }
+  .interaction-toolbar { gap: 8px; }
+  .point-inspector { padding-inline: 12px; }
+  .point-values { gap: 8px 12px; }
+  .point-values b { font-size: 16px; }
+  .interaction-hint { max-width: 130px; }
+  .interaction-color-key { width: 120px; }
+  .slice-chart { padding-inline: 10px; }
+}
+@media (pointer: coarse) {
+  .interaction-lab button, .interaction-lab select, .cut-number-row input { min-height: 40px; }
+  .cut-tabs button { padding-inline: 9px; }
+  .interaction-toggles .layer-toggle { min-height: 40px; }
+}
