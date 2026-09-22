@@ -5,6 +5,7 @@ const InteractionLab = lazy(() => import("./InteractionLab"));
 const FiberForceLab = lazy(() => import("./FiberForceLab"));
 const MaterialLab = lazy(() => import("./MaterialLab"));
 const ProjectedDistributionLab = lazy(() => import("./ProjectedDistributionLab"));
+const ProjectedGeometryLab = lazy(() => import("./ProjectedGeometryLab"));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -16,6 +17,9 @@ function MaterialModule() {
 }
 function ProjectedDistributionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Calculando as distribuições projetadas…</div>}><ProjectedDistributionLab /></Suspense>;
+}
+function ProjectedGeometryModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Construindo a geometria projetada…</div>}><ProjectedGeometryLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -73,5 +77,14 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Deformações, tensões e forças ao longo de z",
     model: "30 × 60 cm · C30 · CA-50 · 8 Ø16",
     Component: ProjectedDistributionModule,
+  },
+  {
+    id: "geometria-projetada",
+    number: "06",
+    menuLabel: "Geometria projetada",
+    chapter: "Linha neutra e coordenadas",
+    title: "Projeção da seção sobre p e z",
+    model: "Seção retangular e seção L · barras Ø16",
+    Component: ProjectedGeometryModule,
   },
 ];

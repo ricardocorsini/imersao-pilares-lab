@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "verify": "node --experimental-strip-types scripts/verify-reference.ts && node --experimental-strip-types scripts/verify-interaction.ts && node --experimental-strip-types scripts/verify-forces.ts && node --experimental-strip-types scripts/verify-materials.ts && node --experimental-strip-types scripts/verify-projected-distribution.ts",
+    "verify": "node --experimental-strip-types scripts/verify-reference.ts && node --experimental-strip-types scripts/verify-interaction.ts && node --experimental-strip-types scripts/verify-forces.ts && node --experimental-strip-types scripts/verify-materials.ts && node --experimental-strip-types scripts/verify-projected-distribution.ts && node --experimental-strip-types scripts/verify-projected-geometry.ts",
     "generate:forces": "node --experimental-strip-types scripts/generate-forces.ts"
   },
   "dependencies": {
