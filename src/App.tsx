@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, LayoutGrid } from "lucide-react";
+import courseLogo from "./assets/logo-pilares-python.png";
 import { visualizationModules } from "./visualizations/registry";
 
 function App() {
@@ -36,39 +37,46 @@ function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a
-          className="brand"
-          href={`#${visualizationModules[0].id}`}
-          aria-label="Pilares em Python — início"
-        >
-          <span className="brand-main">PILARES</span>
-          <span className="brand-code">em Python</span>
-        </a>
-        <div className="header-context">
-          <span className="header-rule" aria-hidden="true" />
-          <span>Laboratório visual</span>
-        </div>
-        <nav className="graph-menu" aria-label="Seleção de gráficos">
-          <label htmlFor="graph-select">
-            <LayoutGrid size={16} aria-hidden="true" />
-            Gráficos
-          </label>
-          <div className="graph-menu-field">
-            <select
-              id="graph-select"
-              aria-label="Escolher gráfico"
-              value={id}
-              onChange={(event) => selectModule(event.target.value)}
-            >
-              {visualizationModules.map((module) => (
-                <option key={module.id} value={module.id}>
-                  {module.number} · {module.menuLabel}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={16} aria-hidden="true" />
+        <div className="header-inner">
+          <a
+            className="brand"
+            href={`#${visualizationModules[0].id}`}
+            aria-label="Pilares em Python — início"
+          >
+            <span className="brand-mark" aria-hidden="true">
+              <img src={courseLogo} alt="" />
+            </span>
+            <span className="brand-copy">
+              <span className="brand-eyebrow">Pilares em Python</span>
+              <span className="brand-title">Laboratório visual</span>
+            </span>
+          </a>
+          <div className="header-context">
+            <span className="header-rule" aria-hidden="true" />
+            <span>Flexocompressão oblíqua</span>
           </div>
-        </nav>
+          <nav className="graph-menu" aria-label="Seleção de gráficos">
+            <label htmlFor="graph-select">
+              <LayoutGrid size={16} aria-hidden="true" />
+              Gráficos
+            </label>
+            <div className="graph-menu-field">
+              <select
+                id="graph-select"
+                aria-label="Escolher gráfico"
+                value={id}
+                onChange={(event) => selectModule(event.target.value)}
+              >
+                {visualizationModules.map((module) => (
+                  <option key={module.id} value={module.id}>
+                    {module.number} · {module.menuLabel}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} aria-hidden="true" />
+            </div>
+          </nav>
+        </div>
       </header>
 
       <main id="top">
