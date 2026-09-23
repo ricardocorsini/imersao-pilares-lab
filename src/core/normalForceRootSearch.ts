@@ -1,5 +1,12 @@
-import { computeLimitStatePath } from "./limitStatePath.ts";
-import { computeProjectedDistribution } from "./projectedDistribution.ts";
+import {
+  computeLimitStatePath,
+  type LimitStatePath,
+} from "./limitStatePath.ts";
+import {
+  calculateSectionState,
+  type PlaneParameters,
+  type SectionState,
+} from "./sectionModel.ts";
 
 export type RootScenarioId = "section" | "two_roots" | "tangent";
 export type RootRefinementMethod = "bisection" | "brent";
@@ -90,6 +97,12 @@ export type RootSearchAnalysis = Readonly<{
   tangentCandidateCount: number;
 }>;
 
+export type SectionLimitStateResponse = Readonly<{
+  path: LimitStatePath;
+  plane: PlaneParameters;
+  state: SectionState;
+}>;
+
 export const ROOT_FORCE_TOLERANCE_KN = 0.01;
 export const ROOT_T_TOLERANCE = 1e-8;
 export const ROOT_SAMPLE_COUNT = 17;
@@ -144,7 +157,31 @@ function requireIntegerInRange(
 }
 
 function normalizedTheta(thetaDeg: number) {
-  return ((thetaDeg % 180) + 180) % 180;
+  return ((thetaDeg % 360) + 360) % 360;
+}
+
+/**
+ * Perfil de ELU seguido da integração da seção. A direção é mantida em 360°:
+ * θ e θ+180° têm a mesma linha neutra, mas bordas comprimidas opostas.
+ */
+export function sectionResponseAtLimitState(
+  t: number,
+  thetaDeg: number,
+): SectionLimitStateResponse {
+  requireFinite(t, "t");
+  requireFinite(thetaDeg, "thetaDeg");
+  if (t < 0 || t > 3) throw new Error("t deve estar entre 0 e 3.");
+  const path = computeLimitStatePath({ t, thetaDeg });
+  const plane = Object.freeze({
+    eps0PerMille: (path.epsTop + path.slopePerMm * path.pMaxMm) * 1_000,
+    gxPerMillePerM: -path.slopePerMm * path.cosine * 1_000_000,
+    gyPerMillePerM: -path.slopePerMm * path.sine * 1_000_000,
+  });
+  return Object.freeze({
+    path,
+    plane,
+    state: calculateSectionState(plane),
+  });
 }
 
 /**
@@ -152,16 +189,7 @@ function normalizedTheta(thetaDeg: number) {
  * Compressão é positiva e tração é negativa, como no restante do laboratório.
  */
 export function sectionNormalResistanceKn(t: number, thetaDeg: number) {
-  requireFinite(t, "t");
-  requireFinite(thetaDeg, "thetaDeg");
-  if (t < 0 || t > 3) throw new Error("t deve estar entre 0 e 3.");
-  const path = computeLimitStatePath({ t, thetaDeg });
-  return computeProjectedDistribution({
-    thetaDeg,
-    epsTopPerMille: path.epsTop * 1_000,
-    epsBottomPerMille: path.epsBottom * 1_000,
-    bands: 60,
-  }).nKn;
+  return sectionResponseAtLimitState(t, thetaDeg).state.nKn;
 }
 
 /** Curvas sintéticas são exclusivas das demonstrações numéricas da interface. */
@@ -499,7 +527,9 @@ export function analyzeNormalForceRoots(input: RootSearchInput): RootSearchAnaly
   const sampleCount = input.sampleCount ?? ROOT_SAMPLE_COUNT;
   const curveSampleCount = input.curveSampleCount ?? ROOT_CURVE_SAMPLE_COUNT;
   requireIntegerInRange(sampleCount, 7, 65, "sampleCount");
-  requireIntegerInRange(curveSampleCount, 33, 241, "curveSampleCount");
+  if (curveSampleCount !== 0) {
+    requireIntegerInRange(curveSampleCount, 33, 241, "curveSampleCount");
+  }
   const scenario = ROOT_SCENARIOS[input.scenarioId];
   if (!scenario) throw new Error("Cenário de raízes inválido.");
   const thetaDeg = normalizedTheta(input.thetaDeg);
@@ -622,8 +652,10 @@ export function analyzeNormalForceRoots(input: RootSearchInput): RootSearchAnaly
     });
   });
 
-  const curve = Array.from({ length: curveSampleCount }, (_, index) =>
-    pointAt(evaluateNormal, nSdKn, 3 * index / (curveSampleCount - 1)));
+  const curve = curveSampleCount === 0
+    ? []
+    : Array.from({ length: curveSampleCount }, (_, index) =>
+      pointAt(evaluateNormal, nSdKn, 3 * index / (curveSampleCount - 1)));
   return Object.freeze({
     input: Object.freeze({
       scenarioId: scenario.id,

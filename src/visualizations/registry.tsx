@@ -8,6 +8,7 @@ const ProjectedDistributionLab = lazy(() => import("./ProjectedDistributionLab")
 const ProjectedGeometryLab = lazy(() => import("./ProjectedGeometryLab"));
 const LimitStateNavigatorLab = lazy(() => import("./LimitStateNavigatorLab"));
 const RootSearchLab = lazy(() => import("./RootSearchLab"));
+const InteractionConstructionLab = lazy(() => import("./InteractionConstructionLab"));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -28,6 +29,9 @@ function LimitStateNavigatorModule() {
 }
 function RootSearchModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Construindo a curva e procurando raízes…</div>}><RootSearchLab /></Suspense>;
+}
+function InteractionConstructionModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Construindo a curva ponto a ponto…</div>}><InteractionConstructionLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -112,5 +116,14 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Equilíbrio e busca de raízes",
     model: "NRd(t, θ) − NSd = 0 · varredura · bisseção · Brent",
     Component: RootSearchModule,
+  },
+  {
+    id: "construcao-curva-interacao",
+    number: "09",
+    menuLabel: "Construção da curva",
+    chapter: "Curvas de interação",
+    title: "Construção da curva de interação",
+    model: "NSd fixo · varredura de θ · raízes · Mx,Rd × My,Rd",
+    Component: InteractionConstructionModule,
   },
 ];
