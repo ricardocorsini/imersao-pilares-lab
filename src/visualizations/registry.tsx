@@ -7,6 +7,7 @@ const MaterialLab = lazy(() => import("./MaterialLab"));
 const ProjectedDistributionLab = lazy(() => import("./ProjectedDistributionLab"));
 const ProjectedGeometryLab = lazy(() => import("./ProjectedGeometryLab"));
 const LimitStateNavigatorLab = lazy(() => import("./LimitStateNavigatorLab"));
+const RootSearchLab = lazy(() => import("./RootSearchLab"));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -24,6 +25,9 @@ function ProjectedGeometryModule() {
 }
 function LimitStateNavigatorModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Percorrendo os estados-limites…</div>}><LimitStateNavigatorLab /></Suspense>;
+}
+function RootSearchModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Construindo a curva e procurando raízes…</div>}><RootSearchLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -99,5 +103,14 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Navegador dos estados-limites",
     model: "Caminho t ∈ [0, 3] · C30 · CA-50 · 8 Ø16",
     Component: LimitStateNavigatorModule,
+  },
+  {
+    id: "equilibrio-busca-raizes",
+    number: "08",
+    menuLabel: "Equilíbrio e raízes",
+    chapter: "Equilíbrio por busca numérica",
+    title: "Equilíbrio e busca de raízes",
+    model: "NRd(t, θ) − NSd = 0 · varredura · bisseção · Brent",
+    Component: RootSearchModule,
   },
 ];
