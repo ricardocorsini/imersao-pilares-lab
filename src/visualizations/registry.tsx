@@ -6,6 +6,7 @@ const FiberForceLab = lazy(() => import("./FiberForceLab"));
 const MaterialLab = lazy(() => import("./MaterialLab"));
 const ProjectedDistributionLab = lazy(() => import("./ProjectedDistributionLab"));
 const ProjectedGeometryLab = lazy(() => import("./ProjectedGeometryLab"));
+const LimitStateNavigatorLab = lazy(() => import("./LimitStateNavigatorLab"));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -20,6 +21,9 @@ function ProjectedDistributionModule() {
 }
 function ProjectedGeometryModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Construindo a geometria projetada…</div>}><ProjectedGeometryLab /></Suspense>;
+}
+function LimitStateNavigatorModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Percorrendo os estados-limites…</div>}><LimitStateNavigatorLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -86,5 +90,14 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Projeção da seção sobre p e z",
     model: "Seção retangular e seção L · barras Ø16",
     Component: ProjectedGeometryModule,
+  },
+  {
+    id: "navegador-estados-limites",
+    number: "07",
+    menuLabel: "Estados-limites",
+    chapter: "Domínios de deformação",
+    title: "Navegador dos estados-limites",
+    model: "Caminho t ∈ [0, 3] · C30 · CA-50 · 8 Ø16",
+    Component: LimitStateNavigatorModule,
   },
 ];
