@@ -9,6 +9,7 @@ const ProjectedGeometryLab = lazy(() => import("./ProjectedGeometryLab"));
 const LimitStateNavigatorLab = lazy(() => import("./LimitStateNavigatorLab"));
 const RootSearchLab = lazy(() => import("./RootSearchLab"));
 const InteractionConstructionLab = lazy(() => import("./InteractionConstructionLab"));
+const StrainDomainsLab = lazy(() => import("./StrainDomainsLab"));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -32,6 +33,9 @@ function RootSearchModule() {
 }
 function InteractionConstructionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Construindo a curva ponto a ponto…</div>}><InteractionConstructionLab /></Suspense>;
+}
+function StrainDomainsModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Construindo o mapa normativo dos domínios…</div>}><StrainDomainsLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -125,5 +129,14 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Construção da curva de interação",
     model: "NSd fixo · varredura de θ · raízes · Mx,Rd × My,Rd",
     Component: InteractionConstructionModule,
+  },
+  {
+    id: "dominios-deformacao-nbr",
+    number: "10",
+    menuLabel: "Domínios NBR 6118",
+    chapter: "Domínios de deformação",
+    title: "Domínios de deformação no ELU",
+    model: "NBR 6118:2026 · Figura 17.1 · pivôs A, B e C · C30–C90",
+    Component: StrainDomainsModule,
   },
 ];
