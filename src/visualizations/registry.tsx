@@ -10,6 +10,7 @@ const LimitStateNavigatorLab = lazy(() => import("./LimitStateNavigatorLab"));
 const RootSearchLab = lazy(() => import("./RootSearchLab"));
 const InteractionConstructionLab = lazy(() => import("./InteractionConstructionLab"));
 const StrainDomainsLab = lazy(() => import("./StrainDomainsLab"));
+const RadialVerificationLab = lazy(() => import("./RadialVerificationLab"));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -36,6 +37,9 @@ function InteractionConstructionModule() {
 }
 function StrainDomainsModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Construindo o mapa normativo dos domínios…</div>}><StrainDomainsLab /></Suspense>;
+}
+function RadialVerificationModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Traçando o raio da solicitação…</div>}><RadialVerificationLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -138,5 +142,14 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Domínios de deformação no ELU",
     model: "NBR 6118:2026 · Figura 17.1 · pivôs A, B e C · C30–C90",
     Component: StrainDomainsModule,
+  },
+  {
+    id: "verificacao-radial",
+    number: "11",
+    menuLabel: "Verificação radial",
+    chapter: "Solicitação × resistência",
+    title: "Verificação radial da solicitação",
+    model: "Mx,Sd × My,Sd · interseção radial · u_rad · aplicabilidade",
+    Component: RadialVerificationModule,
   },
 ];
