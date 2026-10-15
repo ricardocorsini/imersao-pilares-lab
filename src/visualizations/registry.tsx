@@ -11,6 +11,7 @@ const RootSearchLab = lazy(() => import("./RootSearchLab"));
 const InteractionConstructionLab = lazy(() => import("./InteractionConstructionLab"));
 const StrainDomainsLab = lazy(() => import("./StrainDomainsLab"));
 const RadialVerificationLab = lazy(() => import("./RadialVerificationLab"));
+const ReferenceFrameLab = lazy(() => import("./ReferenceFrameLab"));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -40,6 +41,9 @@ function StrainDomainsModule() {
 }
 function RadialVerificationModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Traçando o raio da solicitação…</div>}><RadialVerificationLab /></Suspense>;
+}
+function ReferenceFrameModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Construindo os eixos e a referência da seção…</div>}><ReferenceFrameLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -151,5 +155,14 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Verificação radial da solicitação",
     model: "Mx,Sd × My,Sd · interseção radial · u_rad · aplicabilidade",
     Component: RadialVerificationModule,
+  },
+  {
+    id: "eixos-origem-sinais",
+    number: "12",
+    menuLabel: "Eixos, origem e sinais",
+    chapter: "Problema, escopo e convenções",
+    title: "Eixos, origem e convenções de sinais",
+    model: "Δx · Δy · braços das forças · translação de momentos",
+    Component: ReferenceFrameModule,
   },
 ];
