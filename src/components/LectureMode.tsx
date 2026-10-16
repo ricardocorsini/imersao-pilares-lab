@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { GripVertical, Maximize2, Minimize2, PanelsTopLeft, RotateCcw, Settings2, X } from "lucide-react";
 import { LECTURE_MODULES, type LectureBlock } from "../core/lectureModules";
+import { LectureDrawing } from "./LectureDrawing";
 import "./lecture-mode.css";
 
 type Position = { x: number; y: number };
@@ -80,6 +81,7 @@ export function LectureMode({ active, moduleId, title, onExit, children }: Props
   const [positions, setPositions] = useState<Record<string, Position>>({});
   const [frontCard, setFrontCard] = useState<string | null>(null);
   const [slot, setSlot] = useState<Rect | null>(null);
+  const [layoutVersion, setLayoutVersion] = useState(0);
   const naturalSizes = useRef(new Map<Element, Size>());
   const find = (selector: string) => content.current?.querySelector<HTMLElement | SVGElement>(selector) ?? null;
   const graph = definition.graphs.find(item => item.id === graphId) ?? definition.graphs[0];
@@ -180,6 +182,7 @@ export function LectureMode({ active, moduleId, title, onExit, children }: Props
   useEffect(() => { if (!active) naturalSizes.current.clear(); }, [active]);
 
   const resetLayout = () => {
+    setLayoutVersion(value => value + 1);
     setLauncher(initialLauncher(size)); setPanel(initialPanel(size));
     setPositions(Object.fromEntries(selectedCards.map((id, index) => [id, { x: 24 + (index % 3) * 32, y: 80 + (index % 4) * 54 }])));
   };
@@ -259,5 +262,7 @@ export function LectureMode({ active, moduleId, title, onExit, children }: Props
         </div>;
       })}
     </>}
+    <LectureDrawing active={active} boardKey={`${moduleId}/${graph.id}`} size={size} layoutVersion={layoutVersion}
+      renderMoveHandle={props => <MoveHandle label="barra de desenho" size={size} {...props} />} />
   </div>;
 }
