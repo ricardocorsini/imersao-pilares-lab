@@ -9,6 +9,11 @@ import {
 } from "../core/interactionMesh";
 import { InteractionScene, type InteractionView, type SurfaceAppearance } from "./InteractionScene";
 import { InteractionSliceChart } from "./InteractionSliceChart";
+import { InteractionApproximationPanel } from "./InteractionApproximationPanel";
+import {
+  buildApproximateInteractionSurface, compareRadialCapacities, extractUniaxialResistances,
+  type InteractionDisplayMode,
+} from "../core/nbrInteractionApproximation";
 import "./interaction.css";
 
 const axes: CutAxis[] = ["n", "my", "mx"];
@@ -39,10 +44,32 @@ export default function InteractionLab() {
   const [resetKey, setResetKey] = useState(0);
   const [autoScale, setAutoScale] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [displayMode, setDisplayMode] = useState<InteractionDisplayMode>("fibers");
+  const [interactionAlpha, setInteractionAlpha] = useState(1.2);
+  const [comparisonPhiDeg, setComparisonPhiDeg] = useState(35);
   const nSlice = useMemo(() => sliceMesh(interactionVertices, interactionTriangles, "n", cuts.n), [cuts.n]);
   const mySlice = useMemo(() => sliceMesh(interactionVertices, interactionTriangles, "my", cuts.my), [cuts.my]);
   const mxSlice = useMemo(() => sliceMesh(interactionVertices, interactionTriangles, "mx", cuts.mx), [cuts.mx]);
   const slices = useMemo(() => ({ n: nSlice, my: mySlice, mx: mxSlice }), [nSlice, mySlice, mxSlice]);
+  const uniaxialSections = useMemo(() => interactionData.rings.map(ring => {
+    const points = ring.map(index => interactionVertices[index]);
+    return extractUniaxialResistances(
+      points.length === 1 ? { paths: [], isolated: points } : { paths: [[...points, points[0]]], isolated: [] },
+      points[0][2],
+    );
+  }), []);
+  const currentSection = useMemo(() => extractUniaxialResistances(nSlice, cuts.n), [nSlice, cuts.n]);
+  const approximateSurface = useMemo(() => displayMode === "fibers" ? null : buildApproximateInteractionSurface(
+    [currentSection, ...uniaxialSections], interactionAlpha,
+  ), [displayMode, currentSection, uniaxialSections, interactionAlpha]);
+  const approximateSlices = useMemo(() => approximateSurface ? {
+    n: sliceMesh(approximateSurface.vertices, approximateSurface.triangles, "n", cuts.n),
+    my: sliceMesh(approximateSurface.vertices, approximateSurface.triangles, "my", cuts.my),
+    mx: sliceMesh(approximateSurface.vertices, approximateSurface.triangles, "mx", cuts.mx),
+  } : null, [approximateSurface, cuts]);
+  const comparison = useMemo(() => displayMode === "fibers" ? null : compareRadialCapacities(
+    nSlice, currentSection, interactionAlpha, comparisonPhiDeg,
+  ), [displayMode, nSlice, currentSection, interactionAlpha, comparisonPhiDeg]);
 
   const updateCut = (axis: CutAxis, value: number) => {
     if (!Number.isFinite(value)) return;
@@ -59,6 +86,10 @@ export default function InteractionLab() {
     setAppearance(current => ({ ...current, [key]: value }));
 
   return <div className="lab-shell interaction-lab">
+    <InteractionApproximationPanel mode={displayMode}
+      onMode={mode => { setDisplayMode(mode); setSelection(null); }}
+      alpha={interactionAlpha} onAlpha={alpha => { setInteractionAlpha(alpha); setSelection(null); }}
+      section={currentSection} phiDeg={comparisonPhiDeg} onPhi={setComparisonPhiDeg} comparison={comparison} />
     <div className="interaction-main">
       <section className="viewport-panel" aria-label="Superfície de interação tridimensional">
         <div className="viewport-toolbar interaction-toolbar">
@@ -75,6 +106,7 @@ export default function InteractionLab() {
         </div>
         <div className="interaction-scene">
           <InteractionScene cuts={cuts} slices={slices} activeCut={activeCut} appearance={appearance}
+            displayMode={displayMode} approximateSurface={approximateSurface} approximateSlices={approximateSlices} comparison={comparison}
             view={view} resetKey={resetKey} selected={selection?.point ?? null} onCut={updateCut} onInspect={inspect} />
           <div className="cut-tabs" role="group" aria-label="Corte ativo para arrastar no 3D">
             {axes.map(axis => <button key={axis} type="button" aria-pressed={activeCut === axis}
@@ -83,7 +115,8 @@ export default function InteractionLab() {
             </button>)}
           </div>
           <div className="interaction-color-key" aria-label="A cor da superfície representa a força normal N">
-            <span>N · kN</span><div aria-hidden="true" /><span>0</span><span>{formatInteraction(interactionData.nCapacityKn, 0)}</span>
+            {displayMode !== "approximate" && <><span>Fibras · N em kN</span><div aria-hidden="true" /><span>0</span><span>{formatInteraction(interactionData.nCapacityKn, 0)}</span></>}
+            {displayMode !== "fibers" && <span className="nbr-scene-key">Tracejado laranja · aprox. α = {formatInteraction(interactionAlpha, 2)}</span>}
           </div>
           <div className="interaction-hint"><MousePointer2 size={14} aria-hidden="true" />Girar · zoom<span>Arraste a seta para cortar</span></div>
         </div>
@@ -131,7 +164,7 @@ export default function InteractionLab() {
           </section>;
         })}
         <div className="interaction-appearance">
-          <RangeControl id="surface-opacity" label="Opacidade da superfície" symbol="α"
+          <RangeControl id="surface-opacity" label="Opacidade das superfícies" symbol="op."
             value={Math.round(appearance.opacity * 100)} min={0} max={100} step={1} unit="%" signed={false} fractionDigits={0}
             onChange={value => updateAppearance("opacity", value / 100)} />
           <div className="interaction-toggles">
@@ -145,16 +178,19 @@ export default function InteractionLab() {
     </div>
     <div className="slice-chart-grid">
       {axes.map(axis => <InteractionSliceChart key={axis} axis={axis} value={cuts[axis]} cuts={cuts} slice={slices[axis]}
+        displayMode={displayMode} approximateSlice={approximateSlices?.[axis] ?? null} comparison={axis === "n" ? comparison : null}
         active={activeCut === axis} autoScale={autoScale} selected={selection?.point ?? null}
         onActivate={() => setActiveCut(axis)} onInspect={inspect} />)}
     </div>
     <div className="interaction-caption">
-      <span>Mesma cor = mesmo corte. Guias tracejadas = outros planos.</span>
+      <span>Mesma cor = mesmo corte por fibras. Laranja tracejado = processo aproximado. Guias finas = outros planos.</span>
       <span>N ≥ 0 · compressão positiva · uso didático</span>
       <details><summary>Modelo e precisão</summary>
         <p>Dados pré-gerados pelo FlexoPy: 54 níveis de N, 120 orientações, 48 × 72 fibras. Os cortes e as leituras são interpolados na mesma malha triangular do 3D. Não há extrapolação para N &lt; 0.</p>
         <p>A base tracejada em N = 0 fecha os diagramas no limite do escopo; não representa ruptura à tração. O topo corresponde à compressão uniforme. Os eixos de momento usam a mesma escala no 3D; N tem escala própria.</p>
         <p>O ponto branco identifica a leitura. Clique ou toque para fixar; × libera a leitura. Os controles numéricos e as setas do teclado nos 2D também permitem explorar os resultados.</p>
+        <p>Na comparação, a expressão do item 17.2.5 usa os módulos dos interceptos de flexão normal no mesmo N, respeitando o sinal de cada quadrante. A seção retangular e suas armaduras são simétricas; os eixos x e y são principais da seção bruta. A hipótese α = 1,2 vem do trecho normativo fornecido; α = 1 é a alternativa geral. Não há ajuste automático do expoente nem garantia de coincidência com a curva por fibras.</p>
+        <p>O nível N corrente também é inserido na malha aproximada, para que a curva horizontal use exatamente seus interceptos. O 3D e os cortes verticais são lineares por triângulos; o comparador radial avalia a expressão analítica. No topo a fronteira se reduz a um ponto e a razão radial deixa de ser calculada. A base em N = 0 continua sendo apenas o limite do escopo.</p>
       </details>
     </div>
   </div>;

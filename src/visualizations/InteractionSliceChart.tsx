@@ -4,6 +4,7 @@ import {
   CUT_COLORS, CUT_INDEX, CUT_LABELS, CUT_TITLES, formatInteraction, interpolatePoint, pointOnSlice,
   type CutAxis, type CutValues, type InteractionPoint, type SliceResult,
 } from "../core/interactionMesh";
+import { NBR_APPROXIMATION_COLOR, type InteractionDisplayMode, type RadialComparison } from "../core/nbrInteractionApproximation";
 
 type Props = {
   axis: CutAxis;
@@ -13,6 +14,9 @@ type Props = {
   active: boolean;
   autoScale: boolean;
   selected: InteractionPoint | null;
+  displayMode: InteractionDisplayMode;
+  approximateSlice: SliceResult | null;
+  comparison: RadialComparison | null;
   onActivate: () => void;
   onInspect: (point: InteractionPoint, source: string, pin: boolean) => void;
 };
@@ -33,7 +37,7 @@ function ticks(domain: [number, number]) {
   return result;
 }
 
-export function InteractionSliceChart({ axis, value, cuts, slice, active, autoScale, selected, onActivate, onInspect }: Props) {
+export function InteractionSliceChart({ axis, value, cuts, slice, active, autoScale, selected, displayMode, approximateSlice, comparison, onActivate, onInspect }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const clipId = useId().replaceAll(":", "");
   const [width, setWidth] = useState(380);
@@ -47,7 +51,13 @@ export function InteractionSliceChart({ axis, value, cuts, slice, active, autoSc
   }, []);
   const xDimension = axis === "mx" ? 1 : 0;
   const yDimension = axis === "n" ? 1 : 2;
-  const points = useMemo(() => [...slice.paths.flat(), ...slice.isolated], [slice]);
+  const showFibers = displayMode !== "approximate";
+  const series = useMemo(() => [
+    ...(showFibers ? [{ slice, model: "Fibras" }] : []),
+    ...(displayMode !== "fibers" && approximateSlice ? [{ slice: approximateSlice, model: "Aproximado NBR" }] : []),
+  ], [showFibers, displayMode, slice, approximateSlice]);
+  const points = useMemo(() => series.flatMap(item => [...item.slice.paths.flat(), ...item.slice.isolated]), [series]);
+  const keyboardPoints = useMemo(() => series.flatMap(item => [...item.slice.paths.flat(), ...item.slice.isolated].map(point => ({ point, model: item.model }))), [series]);
   const domain = (dimension: number) => {
     if (!autoScale || points.length < 2) return paddedDomain(interactionBounds[dimension]);
     return paddedDomain([Math.min(...points.map(p => p[dimension])), Math.max(...points.map(p => p[dimension]))]);
@@ -70,19 +80,22 @@ export function InteractionSliceChart({ axis, value, cuts, slice, active, autoSc
     if (px < frame.left || px > frame.right || py < frame.top || py > frame.bottom) return;
     let best: InteractionPoint = points[0];
     let bestDistance = Infinity;
-    for (const path of slice.paths) for (let i = 1; i < path.length; i++) {
+    let bestModel = series[0].model;
+    for (const item of series) {
+    for (const path of item.slice.paths) for (let i = 1; i < path.length; i++) {
       const a = path[i - 1]; const b = path[i];
       const ax = xScale(a[xDimension]); const ay = yScale(a[yDimension]);
       const dx = xScale(b[xDimension]) - ax; const dy = yScale(b[yDimension]) - ay;
       const t = Math.min(1, Math.max(0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
       const distance = Math.hypot(px - ax - t * dx, py - ay - t * dy);
-      if (distance < bestDistance) { bestDistance = distance; best = interpolatePoint(a, b, t); }
+      if (distance < bestDistance) { bestDistance = distance; best = interpolatePoint(a, b, t); bestModel = item.model; }
     }
-    for (const point of slice.isolated) {
+    for (const point of item.slice.isolated) {
       const distance = Math.hypot(px - xScale(point[xDimension]), py - yScale(point[yDimension]));
-      if (distance < bestDistance) { bestDistance = distance; best = point; }
+      if (distance < bestDistance) { bestDistance = distance; best = point; bestModel = item.model; }
     }
-    onInspect(best, `Corte ${CUT_LABELS[axis]} = ${formatInteraction(value)}`, pin);
+    }
+    onInspect(best, `${bestModel} · corte ${CUT_LABELS[axis]} = ${formatInteraction(value)}`, pin);
   };
   const onKey = (event: KeyboardEvent<SVGSVGElement>) => {
     if (!points.length || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
@@ -90,10 +103,11 @@ export function InteractionSliceChart({ axis, value, cuts, slice, active, autoSc
     if (event.key === "Home") keyboardIndex.current = 0;
     else if (event.key === "End") keyboardIndex.current = points.length - 1;
     else keyboardIndex.current = (keyboardIndex.current + (event.key === "ArrowLeft" || event.key === "ArrowDown" ? -1 : 1) + points.length) % points.length;
-    onInspect(points[keyboardIndex.current % points.length], `Corte ${CUT_LABELS[axis]} = ${formatInteraction(value)}`, true);
+    const target = keyboardPoints[keyboardIndex.current % keyboardPoints.length];
+    onInspect(target.point, `${target.model} · corte ${CUT_LABELS[axis]} = ${formatInteraction(value)}`, true);
   };
 
-  const outline = (base: boolean) => slice.paths.map(path => {
+  const outline = (target: SliceResult, base: boolean) => target.paths.map(path => {
     let d = ""; let connected = false;
     for (let i = 1; i < path.length; i++) {
       const isBase = axis !== "n" && Math.abs(path[i - 1][2]) < 1e-5 && Math.abs(path[i][2]) < 1e-5;
@@ -117,7 +131,7 @@ export function InteractionSliceChart({ axis, value, cuts, slice, active, autoSc
         tabIndex={0} role="img" aria-label={`${CUT_TITLES[axis]}, ${CUT_LABELS[axis]} constante. Setas do teclado percorrem a curva; toque ou clique para fixar um ponto.`}
         onKeyDown={onKey} onPointerMove={event => { if (event.pointerType === "mouse") inspect(event, false); }}
         onPointerDown={event => inspect(event, true)}>
-        <title>{CUT_TITLES[axis]} · corte real da malha 3D</title>
+        <title>{CUT_TITLES[axis]} · {displayMode === "fibers" ? "corte do modelo por fibras" : "comparação das malhas por fibras e aproximada NBR"}</title>
         <defs><clipPath id={clipId}><rect x={frame.left} y={frame.top} width={frame.right - frame.left} height={frame.bottom - frame.top} /></clipPath></defs>
         <rect x={frame.left} y={frame.top} width={frame.right - frame.left} height={frame.bottom - frame.top} fill="#0a1e2d" />
         {ticks(xDomain).map(v => <g key={`x${v}`}>
@@ -131,16 +145,28 @@ export function InteractionSliceChart({ axis, value, cuts, slice, active, autoSc
         <text className="chart-axis-title" x={frame.left} y={15}>{axisName[yDimension]} · {axisUnit[yDimension]}</text>
         <text className="chart-axis-title" x={frame.right} y={height - 6} textAnchor="end">{axisName[xDimension]} · {axisUnit[xDimension]}</text>
         <g clipPath={`url(#${clipId})`}>
-          {slice.paths.map((path, i) => <path key={i} d={`M${path.map(position).join("L")}`} fill={CUT_COLORS[axis]} fillOpacity={0.06} stroke="none" />)}
+          {showFibers && slice.paths.map((path, i) => <path key={i} d={`M${path.map(position).join("L")}`} fill={CUT_COLORS[axis]} fillOpacity={0.06} stroke="none" />)}
           {(["mx", "my", "n"] as CutAxis[]).filter(a => a !== axis).map(other => {
             const dimension = CUT_INDEX[other];
             return dimension === xDimension
               ? <line key={other} x1={xScale(cuts[other])} x2={xScale(cuts[other])} y1={frame.top} y2={frame.bottom} stroke={CUT_COLORS[other]} strokeDasharray="4 5" opacity={0.65} />
               : <line key={other} x1={frame.left} x2={frame.right} y1={yScale(cuts[other])} y2={yScale(cuts[other])} stroke={CUT_COLORS[other]} strokeDasharray="4 5" opacity={0.65} />;
           })}
-          <path d={outline(false)} fill="none" stroke={CUT_COLORS[axis]} strokeWidth={3} strokeLinejoin="round" />
-          <path d={outline(true)} fill="none" stroke={CUT_COLORS[axis]} strokeWidth={2} strokeDasharray="5 5" />
-          {slice.isolated.map((point, i) => <circle key={i} cx={xScale(point[xDimension])} cy={yScale(point[yDimension])} r={5} fill={CUT_COLORS[axis]} />)}
+          {showFibers && <>
+            <path d={outline(slice, false)} fill="none" stroke={CUT_COLORS[axis]} strokeWidth={3} strokeLinejoin="round" />
+            <path d={outline(slice, true)} fill="none" stroke={CUT_COLORS[axis]} strokeWidth={2} strokeDasharray="5 5" />
+            {slice.isolated.map((point, i) => <circle key={i} cx={xScale(point[xDimension])} cy={yScale(point[yDimension])} r={5} fill={CUT_COLORS[axis]} />)}
+          </>}
+          {displayMode !== "fibers" && approximateSlice && <>
+            <path data-model="nbr-approximation" d={outline(approximateSlice, false)} fill="none" stroke={NBR_APPROXIMATION_COLOR} strokeWidth={2.5} strokeDasharray="7 5" strokeLinejoin="round" />
+            <path d={outline(approximateSlice, true)} fill="none" stroke={NBR_APPROXIMATION_COLOR} strokeWidth={1.5} strokeDasharray="2 5" />
+            {approximateSlice.isolated.map((point, i) => <rect key={i} x={xScale(point[xDimension]) - 4} y={yScale(point[yDimension]) - 4} width={8} height={8} fill={NBR_APPROXIMATION_COLOR} />)}
+          </>}
+          {comparison && <>
+            <path d={`M${position([0, 0, value])}L${position(comparison.fiberRadiusKnm > comparison.approximateRadiusKnm ? comparison.fiberPoint : comparison.approximatePoint)}`} fill="none" stroke="#cbdce6" strokeWidth={1.2} strokeDasharray="3 4" />
+            {showFibers && <circle cx={xScale(comparison.fiberPoint[xDimension])} cy={yScale(comparison.fiberPoint[yDimension])} r={4} fill={CUT_COLORS[axis]} stroke="#fff" strokeWidth={1} />}
+            <rect x={xScale(comparison.approximatePoint[xDimension]) - 4} y={yScale(comparison.approximatePoint[yDimension]) - 4} width={8} height={8} fill={NBR_APPROXIMATION_COLOR} stroke="#fff" strokeWidth={1} />
+          </>}
           {selectedHere && <g>
             <line x1={xScale(selectedHere[xDimension])} x2={xScale(selectedHere[xDimension])} y1={frame.top} y2={frame.bottom} stroke="#ffffff" opacity={0.3} />
             <line x1={frame.left} x2={frame.right} y1={yScale(selectedHere[yDimension])} y2={yScale(selectedHere[yDimension])} stroke="#ffffff" opacity={0.3} />

@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "verify": "node --experimental-strip-types scripts/verify-reference.ts && node --experimental-strip-types scripts/verify-interaction.ts && node --experimental-strip-types scripts/verify-forces.ts && node --experimental-strip-types scripts/verify-materials.ts && node --experimental-strip-types scripts/verify-projected-distribution.ts && node --experimental-strip-types scripts/verify-projected-geometry.ts && node --experimental-strip-types scripts/verify-limit-state-path.ts && node --experimental-strip-types scripts/verify-normal-force-roots.ts && node --experimental-strip-types scripts/verify-interaction-construction.ts && node --experimental-strip-types scripts/verify-strain-domains.ts && node --experimental-strip-types scripts/verify-radial-verification.ts",
+    "verify": "node --experimental-strip-types scripts/verify-reference.ts && node --experimental-strip-types scripts/verify-interaction.ts && node --experimental-strip-types scripts/verify-forces.ts && node --experimental-strip-types scripts/verify-materials.ts && node --experimental-strip-types scripts/verify-projected-distribution.ts && node --experimental-strip-types scripts/verify-projected-geometry.ts && node --experimental-strip-types scripts/verify-limit-state-path.ts && node --experimental-strip-types scripts/verify-normal-force-roots.ts && node --experimental-strip-types scripts/verify-interaction-construction.ts && node --experimental-strip-types scripts/verify-strain-domains.ts && node --experimental-strip-types scripts/verify-radial-verification.ts && npm run verify:nbr",
+    "verify:nbr": "node --experimental-strip-types scripts/verify-nbr-approximation.ts",
     "generate:forces": "node --experimental-strip-types scripts/generate-forces.ts"
   },
   "dependencies": {

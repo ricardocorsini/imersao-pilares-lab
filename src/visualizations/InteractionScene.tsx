@@ -10,6 +10,10 @@ import {
   CUT_COLORS, CUT_INDEX, CUT_LABELS, formatInteraction,
   type CutAxis, type CutValues, type InteractionPoint, type SliceResult,
 } from "../core/interactionMesh";
+import {
+  NBR_APPROXIMATION_COLOR,
+  type ApproximateInteractionSurface, type InteractionDisplayMode, type RadialComparison,
+} from "../core/nbrInteractionApproximation";
 
 export type InteractionView = "iso" | "n" | "my" | "mx";
 export type SurfaceAppearance = { opacity: number; wireframe: boolean; planes: boolean; clip: boolean };
@@ -21,6 +25,10 @@ type Props = {
   view: InteractionView;
   resetKey: number;
   selected: InteractionPoint | null;
+  displayMode: InteractionDisplayMode;
+  approximateSurface: ApproximateInteractionSurface | null;
+  approximateSlices: Record<CutAxis, SliceResult> | null;
+  comparison: RadialComparison | null;
   onCut: (axis: CutAxis, value: number) => void;
   onInspect: (point: InteractionPoint, source: string, pin: boolean) => void;
 };
@@ -64,15 +72,19 @@ function CutPlane({ axis, value, active }: { axis: CutAxis; value: number; activ
   </group>;
 }
 
-function Surface({ appearance, activeCut, cuts, onInspect, dragging }: Pick<Props, "appearance" | "activeCut" | "cuts" | "onInspect"> & { dragging: boolean }) {
+function Surface({ appearance, activeCut, cuts, onInspect, dragging, approximateSurface }: Pick<Props, "appearance" | "activeCut" | "cuts" | "onInspect"> & {
+  dragging: boolean; approximateSurface?: ApproximateInteractionSurface;
+}) {
   const geometry = useMemo(() => {
+    const vertices = approximateSurface?.vertices ?? interactionVertices;
+    const triangles = approximateSurface?.triangles ?? interactionTriangles;
     const mesh = new THREE.BufferGeometry();
-    mesh.setAttribute("position", new THREE.Float32BufferAttribute(interactionVertices.flatMap(toWorld), 3));
-    mesh.setAttribute("color", new THREE.Float32BufferAttribute(interactionVertices.flatMap(point =>
+    mesh.setAttribute("position", new THREE.Float32BufferAttribute(vertices.flatMap(toWorld), 3));
+    mesh.setAttribute("color", new THREE.Float32BufferAttribute(vertices.flatMap(point =>
       new THREE.Color(axialColor(point[2] / nMax)).toArray()), 3));
-    mesh.setIndex(interactionTriangles.flat());
+    mesh.setIndex(triangles.flat());
     return mesh;
-  }, []);
+  }, [approximateSurface]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   const clip = useMemo(() => {
     const point: InteractionPoint = [0, 0, 0];
@@ -91,26 +103,32 @@ function Surface({ appearance, activeCut, cuts, onInspect, dragging }: Pick<Prop
     event.stopPropagation();
     const point = fromWorld(hit.point);
     point[2] = Math.max(0, point[2]);
-    onInspect(point, point[2] < 1e-5 ? "Base N = 0 · limite do escopo" : "Superfície interpolada", pin);
+    const model = approximateSurface ? "Aproximado NBR" : "Modelo por fibras";
+    onInspect(point, point[2] < 1e-5 ? `${model} · base N = 0 · limite do escopo` : `${model} · superfície interpolada`, pin);
   };
   return <mesh geometry={geometry} renderOrder={2}
     onPointerMove={event => inspect(event, false)} onClick={event => inspect(event, true)}>
-    <meshBasicMaterial vertexColors side={THREE.DoubleSide} transparent
+    <meshBasicMaterial vertexColors={!approximateSurface} color={approximateSurface ? NBR_APPROXIMATION_COLOR : "#ffffff"} side={THREE.DoubleSide} transparent
       opacity={appearance.opacity} depthWrite={false} toneMapped={false}
       clippingPlanes={appearance.clip ? [clip] : []} />
   </mesh>;
 }
 
-function SurfaceGrid() {
-  const rings = interactionData.rings.filter((ring, i) => i % 6 === 0 && ring.length > 1);
-  const meridians = Array.from({ length: 12 }, (_, index) => interactionData.rings.map(ring =>
-    toWorld(interactionVertices[ring[Math.min(index * 10, ring.length - 1)]])));
+function SurfaceGrid({ approximateSurface }: { approximateSurface?: ApproximateInteractionSurface }) {
+  const vertices = approximateSurface?.vertices ?? interactionVertices;
+  const allRings = approximateSurface?.rings ?? interactionData.rings;
+  const rings = allRings.filter((ring, i) => i % 6 === 0 && ring.length > 1);
+  const meridians = Array.from({ length: 12 }, (_, index) => allRings.map(ring =>
+    toWorld(vertices[ring[Math.min(index * 10, ring.length - 1)]])));
+  const color = approximateSurface ? NBR_APPROXIMATION_COLOR : "#b4e5ff";
   return <group>
     {rings.map((ring, index) => <Line key={`r${index}`}
-      points={[...ring, ring[0]].map(i => toWorld(interactionVertices[i]))}
-      color="#b4e5ff" transparent opacity={0.2} lineWidth={1} depthWrite={false} />)}
+      points={[...ring, ring[0]].map(i => toWorld(vertices[i]))}
+      color={color} transparent opacity={approximateSurface ? 0.33 : 0.2} lineWidth={1} depthWrite={false}
+      dashed={Boolean(approximateSurface)} dashSize={0.12} gapSize={0.08} />)}
     {meridians.map((points, index) => <Line key={`m${index}`} points={points}
-      color="#b4e5ff" transparent opacity={0.16} lineWidth={1} depthWrite={false} />)}
+      color={color} transparent opacity={approximateSurface ? 0.28 : 0.16} lineWidth={1} depthWrite={false}
+      dashed={Boolean(approximateSurface)} dashSize={0.12} gapSize={0.08} />)}
   </group>;
 }
 
@@ -197,38 +215,68 @@ function Camera({ view, resetKey }: Pick<Props, "view" | "resetKey">) {
     target={[0, 2.8, 0]} maxPolarAngle={Math.PI * 0.94} />;
 }
 
-function Content(props: Props) {
-  const [dragging, setDragging] = useState(false);
-  return <>
-    <AxisFrame view={props.view} />
-    {props.appearance.planes && axes.map(axis => <CutPlane key={axis} axis={axis}
-      value={props.cuts[axis]} active={props.activeCut === axis} />)}
-    <Surface {...props} dragging={dragging} />
-    {props.appearance.wireframe && !props.appearance.clip && <SurfaceGrid />}
-    {axes.map(axis => <group key={axis}>
-      {props.slices[axis].paths.map((path, i) => <Line key={i} points={path.map(toWorld)}
-        color={CUT_COLORS[axis]} lineWidth={props.activeCut === axis ? 4 : 2.5}
+function CutCurves({ props, dragging, slices, approximate = false }: {
+  props: Props; dragging: boolean; slices: Record<CutAxis, SliceResult>; approximate?: boolean;
+}) {
+  const model = approximate ? "Aproximado NBR" : "Fibras";
+  return <>{axes.map(axis => <group key={axis}>
+      {slices[axis].paths.map((path, i) => <Line key={i} points={path.map(toWorld)}
+        color={approximate ? NBR_APPROXIMATION_COLOR : CUT_COLORS[axis]} lineWidth={props.activeCut === axis ? 4 : 2.5}
+        dashed={approximate} dashSize={0.13} gapSize={0.08}
         depthTest={false} renderOrder={5}
         onPointerMove={event => {
           if (dragging || event.buttons) return;
           event.stopPropagation();
           const point = physicalLinePoint(event);
           point[CUT_INDEX[axis]] = props.cuts[axis];
-          props.onInspect(point, `Corte ${CUT_LABELS[axis]} = ${formatInteraction(props.cuts[axis])}`, false);
+          props.onInspect(point, `${model} · corte ${CUT_LABELS[axis]} = ${formatInteraction(props.cuts[axis])}`, false);
         }}
         onClick={event => {
           if (dragging || event.delta > 3) return;
           event.stopPropagation();
           const point = physicalLinePoint(event);
           point[CUT_INDEX[axis]] = props.cuts[axis];
-          props.onInspect(point, `Corte ${CUT_LABELS[axis]} = ${formatInteraction(props.cuts[axis])}`, true);
+          props.onInspect(point, `${model} · corte ${CUT_LABELS[axis]} = ${formatInteraction(props.cuts[axis])}`, true);
         }} />)}
-      {props.slices[axis].isolated.map((point, i) => <mesh key={`p${i}`} position={toWorld(point)} renderOrder={6}
-        onPointerMove={event => { if (dragging || event.buttons) return; event.stopPropagation(); props.onInspect(point, `Corte ${CUT_LABELS[axis]} · ponto limite`, false); }}
-        onClick={event => { if (dragging || event.delta > 3) return; event.stopPropagation(); props.onInspect(point, `Corte ${CUT_LABELS[axis]} · ponto limite`, true); }}>
-        <sphereGeometry args={[0.07, 16, 12]} /><meshBasicMaterial color={CUT_COLORS[axis]} depthTest={false} toneMapped={false} />
+      {slices[axis].isolated.map((point, i) => <mesh key={`p${i}`} position={toWorld(point)} renderOrder={6}
+        onPointerMove={event => { if (dragging || event.buttons) return; event.stopPropagation(); props.onInspect(point, `${model} · corte ${CUT_LABELS[axis]} · ponto limite`, false); }}
+        onClick={event => { if (dragging || event.delta > 3) return; event.stopPropagation(); props.onInspect(point, `${model} · corte ${CUT_LABELS[axis]} · ponto limite`, true); }}>
+        <sphereGeometry args={[0.07, 16, 12]} /><meshBasicMaterial color={approximate ? NBR_APPROXIMATION_COLOR : CUT_COLORS[axis]} depthTest={false} toneMapped={false} />
       </mesh>)}
-    </group>)}
+    </group>)}</>;
+}
+
+function Content(props: Props) {
+  const [dragging, setDragging] = useState(false);
+  const showFibers = props.displayMode !== "approximate";
+  const showApproximate = props.displayMode !== "fibers";
+  return <>
+    <AxisFrame view={props.view} />
+    {props.appearance.planes && axes.map(axis => <CutPlane key={axis} axis={axis}
+      value={props.cuts[axis]} active={props.activeCut === axis} />)}
+    {showFibers && <Surface {...props} dragging={dragging} approximateSurface={undefined}
+      appearance={{ ...props.appearance, opacity: props.appearance.opacity * (showApproximate ? 0.72 : 1) }} />}
+    {showApproximate && props.approximateSurface && <Surface {...props} dragging={dragging}
+      approximateSurface={props.approximateSurface}
+      appearance={{ ...props.appearance, opacity: props.appearance.opacity * (showFibers ? 0.42 : 1) }} />}
+    {props.appearance.wireframe && !props.appearance.clip && <>
+      {showFibers && <SurfaceGrid />}
+      {showApproximate && props.approximateSurface && <SurfaceGrid approximateSurface={props.approximateSurface} />}
+    </>}
+    {showFibers && <CutCurves props={props} dragging={dragging} slices={props.slices} />}
+    {showApproximate && props.approximateSlices && <CutCurves props={props} dragging={dragging} slices={props.approximateSlices} approximate />}
+    {props.comparison && <group>
+      <Line points={[[0, 0, props.cuts.n],
+        props.comparison.fiberRadiusKnm > props.comparison.approximateRadiusKnm
+          ? props.comparison.fiberPoint : props.comparison.approximatePoint].map(point => toWorld(point as InteractionPoint))}
+        color="#d9e8ef" transparent opacity={0.7} lineWidth={1.5} dashed dashSize={0.08} gapSize={0.05} depthTest={false} />
+      {([
+        [props.comparison.fiberPoint, CUT_COLORS.n, showFibers],
+        [props.comparison.approximatePoint, NBR_APPROXIMATION_COLOR, showApproximate],
+      ] as [InteractionPoint, string, boolean][]).filter(([, , visible]) => visible).map(([point, color], index) => <mesh key={index} position={toWorld(point)} renderOrder={9}>
+        <sphereGeometry args={[0.075, 16, 12]} /><meshBasicMaterial color={color} depthTest={false} toneMapped={false} />
+      </mesh>)}
+    </group>}
     {props.selected && <mesh position={toWorld(props.selected)} renderOrder={10}>
       <sphereGeometry args={[0.095, 20, 16]} /><meshBasicMaterial color="#ffffff" depthTest={false} toneMapped={false} />
     </mesh>}
@@ -240,7 +288,7 @@ function Content(props: Props) {
 
 export function InteractionScene(props: Props) {
   return <div className="canvas-mount" role="img"
-    aria-label={`Superfície resistente N–Mx–My. Corte ativo ${CUT_LABELS[props.activeCut]} = ${formatInteraction(props.cuts[props.activeCut])}. Arraste a seta para cortar. Os mesmos controles estão disponíveis no painel lateral.`}>
+    aria-label={`Superfície resistente N–Mx–My. ${props.displayMode === "fibers" ? "Modelo por fibras." : props.displayMode === "overlay" ? "Comparação: fibras e processo aproximado NBR." : "Processo aproximado NBR."} Corte ativo ${CUT_LABELS[props.activeCut]} = ${formatInteraction(props.cuts[props.activeCut])}. Arraste a seta para cortar. Os mesmos controles estão disponíveis no painel lateral.`}>
     <Canvas frameloop="demand" dpr={[1, 1.65]} camera={{ position: [10.7, 8.6, 12.8], fov: 38, near: 0.1, far: 100 }}
       fallback={<div className="interaction-loading">O 3D requer WebGL. Os cortes e diagramas 2D continuam disponíveis abaixo.</div>}
       gl={{ antialias: true, powerPreference: "high-performance" }} onCreated={({ gl }) => {
