@@ -1,14 +1,44 @@
-import { useEffect, useState } from "react";
-import { ArrowUpRight, ChevronDown, ExternalLink, GraduationCap, LayoutGrid, MessageCircle, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUpRight, ChevronDown, ExternalLink, GraduationCap, LayoutGrid, Maximize2, MessageCircle, X } from "lucide-react";
 import courseLogo from "./assets/logo-pilares-python.png";
 import companyLogo from "./assets/logo-corsini-engenharia.png";
 import { visualizationModules } from "./visualizations/registry";
+import { LectureMode } from "./components/LectureMode";
 
 const COURSE_URL = "http://pilarespython.com/";
 const WHATSAPP_URL = "https://wa.me/5598991489994";
 const PROMO_DISMISSED_KEY = "pilares-python-course-promo-dismissed-v1";
 
 function App() {
+  const shell = useRef<HTMLDivElement>(null);
+  const lectureButton = useRef<HTMLButtonElement>(null);
+  const previousScroll = useRef(0);
+  const lectureActive = useRef(false);
+  const [lecture, setLecture] = useState(false);
+  const exitLecture = useCallback(() => {
+    if (!lectureActive.current) return;
+    lectureActive.current = false;
+    setLecture(false);
+    if (document.fullscreenElement === shell.current) void document.exitFullscreen().catch(() => {});
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: previousScroll.current, behavior: "instant" });
+      lectureButton.current?.focus({ preventScroll: true });
+    });
+  }, []);
+  const enterLecture = () => {
+    lectureActive.current = true;
+    previousScroll.current = window.scrollY;
+    setLecture(true);
+    if (!document.fullscreenElement && shell.current?.requestFullscreen) {
+      // The same immersive layout also works where the native API is unavailable or denied.
+      void shell.current.requestFullscreen().catch(() => {});
+    }
+  };
+  useEffect(() => {
+    const syncFullscreen = () => { if (!document.fullscreenElement) exitLecture(); };
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, [exitLecture]);
   const [showPromo, setShowPromo] = useState(() => {
     try { return window.sessionStorage.getItem(PROMO_DISMISSED_KEY) !== "true"; }
     catch { return true; }
@@ -23,6 +53,7 @@ function App() {
 
   useEffect(() => {
     const syncSelection = () => {
+      exitLecture();
       const id = window.location.hash.slice(1);
       setSelectedId(
         visualizationModules.find((module) => module.id === id)?.id ??
@@ -31,7 +62,7 @@ function App() {
     };
     window.addEventListener("hashchange", syncSelection);
     return () => window.removeEventListener("hashchange", syncSelection);
-  }, []);
+  }, [exitLecture]);
 
   const selectedModule =
     visualizationModules.find((module) => module.id === selectedId) ??
@@ -62,8 +93,8 @@ function App() {
   };
 
   return (
-    <div className="app-shell">
-      <header className="site-header">
+    <div className="app-shell" ref={shell}>
+      <header className="site-header" inert={lecture}>
         <div className="header-inner">
           <a
             className="brand"
@@ -113,7 +144,7 @@ function App() {
       </header>
 
       <main id="top">
-        {showPromo && <aside className="course-promo" id="course-promo" aria-labelledby="course-promo-title">
+        {showPromo && <aside className="course-promo" id="course-promo" aria-labelledby="course-promo-title" inert={lecture}>
           <div className="course-promo-copy">
             <span className="course-promo-eyebrow"><GraduationCap size={16} aria-hidden="true" />Imersão Pilares em Python</span>
             <h2 id="course-promo-title">Implemente o cálculo que fica escondido dentro do software.</h2>
@@ -131,7 +162,7 @@ function App() {
           </button>
         </aside>}
         <article className="visual-module" id={id} key={id}>
-          <header className="module-header">
+          <header className="module-header" inert={lecture}>
             <div className="module-number" aria-label={`Visual ${number}`}>
               {number}
             </div>
@@ -139,13 +170,15 @@ function App() {
               <span className="module-chapter">{chapter}</span>
               <h1>{title}</h1>
             </div>
-            <span className="module-model">{model}</span>
+            <div className="module-actions"><span className="module-model">{model}</span>
+              <button type="button" className="lecture-enter" ref={lectureButton} onClick={enterLecture}><Maximize2 size={16} aria-hidden="true" />Modo aula</button>
+            </div>
           </header>
-          <Component />
+          <LectureMode active={lecture} moduleId={id} title={title} onExit={exitLecture}><Component /></LectureMode>
         </article>
       </main>
 
-      <footer className="site-footer" aria-label="Autoria, curso e contato">
+      <footer className="site-footer" aria-label="Autoria, curso e contato" inert={lecture}>
         <div className="footer-inner">
           <div className="footer-content">
             <div className="footer-company">
