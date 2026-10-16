@@ -5,6 +5,7 @@
 .app-shell:fullscreen { overflow: auto; background: #071b28; }
 .lecture-mode.is-active { position: fixed; inset: 0; z-index: 1000; width: 100%; height: 100dvh; overflow: hidden; color: #e7f4fa; background: #071b28; }
 .lecture-mode.is-active .lecture-module-content { visibility: hidden; pointer-events: none; }
+.lecture-mode.is-active :is(.toggle-track, .toggle-thumb) { transition-property: background-color, transform, box-shadow; }
 /* The original nodes stay in their React tree, with their events, state and inherited module variables. */
 .lecture-mode.is-active .lecture-module-content :has([data-lecture-focus], [data-lecture-controls], [data-lecture-card]) { z-index: auto !important; overflow: visible !important; }
 .lecture-mode.is-active [data-lecture-focus],
