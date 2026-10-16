@@ -37,9 +37,16 @@ Não se faz uma nova busca de equilíbrio nem uma nova integração de fibras.
 ## Visualização e sincronização
 
 Os modos são `Modelo por fibras` (comportamento inicial preservado),
-`Sobrepor os dois` e `Só aproximado`. A aproximação usa superfície laranja e
-curvas tracejadas; o modelo por fibras mantém suas cores originais. Leitura
+`Sobrepor os dois` e `Só aproximado`. A aproximação usa uma cor escolhida pelo
+usuário (laranja inicialmente) no preenchimento, na malha, nos cortes 3D/2D e
+nas legendas. As curvas continuam tracejadas; o modelo por fibras mantém suas cores originais. Leitura
 por mouse, toque, teclado e fixação de ponto informa a origem do valor.
+
+Cada superfície tem opacidade independente de 0 a 100%, aplicada diretamente
+ao material 3D, sem redução automática ao sobrepor os modelos. Cor e opacidade
+são mantidas ao alternar os modos durante o uso do módulo. A opacidade só afeta
+o preenchimento: as curvas de corte e a malha auxiliar têm visibilidade própria
+para permitir comparação mesmo com o preenchimento transparente.
 
 A superfície aproximada é a aplicação da expressão em todos os níveis de N.
 O nível N corrente é inserido como um anel adicional, usando seus próprios

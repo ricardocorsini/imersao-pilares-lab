@@ -4,7 +4,7 @@ import {
   CUT_COLORS, CUT_INDEX, CUT_LABELS, CUT_TITLES, formatInteraction, interpolatePoint, pointOnSlice,
   type CutAxis, type CutValues, type InteractionPoint, type SliceResult,
 } from "../core/interactionMesh";
-import { NBR_APPROXIMATION_COLOR, type InteractionDisplayMode, type RadialComparison } from "../core/nbrInteractionApproximation";
+import type { InteractionDisplayMode, RadialComparison } from "../core/nbrInteractionApproximation";
 
 type Props = {
   axis: CutAxis;
@@ -17,6 +17,7 @@ type Props = {
   displayMode: InteractionDisplayMode;
   approximateSlice: SliceResult | null;
   comparison: RadialComparison | null;
+  approximateColor: string;
   onActivate: () => void;
   onInspect: (point: InteractionPoint, source: string, pin: boolean) => void;
 };
@@ -37,7 +38,7 @@ function ticks(domain: [number, number]) {
   return result;
 }
 
-export function InteractionSliceChart({ axis, value, cuts, slice, active, autoScale, selected, displayMode, approximateSlice, comparison, onActivate, onInspect }: Props) {
+export function InteractionSliceChart({ axis, value, cuts, slice, active, autoScale, selected, displayMode, approximateSlice, comparison, approximateColor, onActivate, onInspect }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const clipId = useId().replaceAll(":", "");
   const [width, setWidth] = useState(380);
@@ -158,14 +159,14 @@ export function InteractionSliceChart({ axis, value, cuts, slice, active, autoSc
             {slice.isolated.map((point, i) => <circle key={i} cx={xScale(point[xDimension])} cy={yScale(point[yDimension])} r={5} fill={CUT_COLORS[axis]} />)}
           </>}
           {displayMode !== "fibers" && approximateSlice && <>
-            <path data-model="nbr-approximation" d={outline(approximateSlice, false)} fill="none" stroke={NBR_APPROXIMATION_COLOR} strokeWidth={2.5} strokeDasharray="7 5" strokeLinejoin="round" />
-            <path d={outline(approximateSlice, true)} fill="none" stroke={NBR_APPROXIMATION_COLOR} strokeWidth={1.5} strokeDasharray="2 5" />
-            {approximateSlice.isolated.map((point, i) => <rect key={i} x={xScale(point[xDimension]) - 4} y={yScale(point[yDimension]) - 4} width={8} height={8} fill={NBR_APPROXIMATION_COLOR} />)}
+            <path data-model="nbr-approximation" d={outline(approximateSlice, false)} fill="none" stroke={approximateColor} strokeWidth={2.5} strokeDasharray="7 5" strokeLinejoin="round" />
+            <path d={outline(approximateSlice, true)} fill="none" stroke={approximateColor} strokeWidth={1.5} strokeDasharray="2 5" />
+            {approximateSlice.isolated.map((point, i) => <rect key={i} x={xScale(point[xDimension]) - 4} y={yScale(point[yDimension]) - 4} width={8} height={8} fill={approximateColor} />)}
           </>}
           {comparison && <>
             <path d={`M${position([0, 0, value])}L${position(comparison.fiberRadiusKnm > comparison.approximateRadiusKnm ? comparison.fiberPoint : comparison.approximatePoint)}`} fill="none" stroke="#cbdce6" strokeWidth={1.2} strokeDasharray="3 4" />
             {showFibers && <circle cx={xScale(comparison.fiberPoint[xDimension])} cy={yScale(comparison.fiberPoint[yDimension])} r={4} fill={CUT_COLORS[axis]} stroke="#fff" strokeWidth={1} />}
-            <rect x={xScale(comparison.approximatePoint[xDimension]) - 4} y={yScale(comparison.approximatePoint[yDimension]) - 4} width={8} height={8} fill={NBR_APPROXIMATION_COLOR} stroke="#fff" strokeWidth={1} />
+            <rect x={xScale(comparison.approximatePoint[xDimension]) - 4} y={yScale(comparison.approximatePoint[yDimension]) - 4} width={8} height={8} fill={approximateColor} stroke="#fff" strokeWidth={1} />
           </>}
           {selectedHere && <g>
             <line x1={xScale(selectedHere[xDimension])} x2={xScale(selectedHere[xDimension])} y1={frame.top} y2={frame.bottom} stroke="#ffffff" opacity={0.3} />

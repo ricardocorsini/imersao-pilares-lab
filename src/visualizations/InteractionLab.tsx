@@ -12,13 +12,16 @@ import { InteractionSliceChart } from "./InteractionSliceChart";
 import { InteractionApproximationPanel } from "./InteractionApproximationPanel";
 import {
   buildApproximateInteractionSurface, compareRadialCapacities, extractUniaxialResistances,
-  type InteractionDisplayMode,
+  NBR_APPROXIMATION_COLOR, type InteractionDisplayMode,
 } from "../core/nbrInteractionApproximation";
 import "./interaction.css";
 
 const axes: CutAxis[] = ["n", "my", "mx"];
 const initialCuts: CutValues = { n: interactionData.nCapacityKn * 0.4, my: 0, mx: 0 };
-const initialAppearance: SurfaceAppearance = { opacity: 0.64, wireframe: true, planes: true, clip: false };
+const initialAppearance: SurfaceAppearance = {
+  opacity: 0.64, approximateOpacity: 0.35, approximateColor: NBR_APPROXIMATION_COLOR,
+  wireframe: true, planes: true, clip: false,
+};
 type Selection = { point: InteractionPoint; source: string; pinned: boolean };
 
 function CutNumberInput({ axis, value, onChange }: { axis: CutAxis; value: number; onChange: (value: number) => void }) {
@@ -85,7 +88,8 @@ export default function InteractionLab() {
   const updateAppearance = <K extends keyof SurfaceAppearance>(key: K, value: SurfaceAppearance[K]) =>
     setAppearance(current => ({ ...current, [key]: value }));
 
-  return <div className="lab-shell interaction-lab">
+  return <div className="lab-shell interaction-lab"
+    style={{ "--nbr-approximation-color": appearance.approximateColor } as CSSProperties}>
     <InteractionApproximationPanel mode={displayMode}
       onMode={mode => { setDisplayMode(mode); setSelection(null); }}
       alpha={interactionAlpha} onAlpha={alpha => { setInteractionAlpha(alpha); setSelection(null); }}
@@ -116,7 +120,7 @@ export default function InteractionLab() {
           </div>
           <div className="interaction-color-key" aria-label="A cor da superfície representa a força normal N">
             {displayMode !== "approximate" && <><span>Fibras · N em kN</span><div aria-hidden="true" /><span>0</span><span>{formatInteraction(interactionData.nCapacityKn, 0)}</span></>}
-            {displayMode !== "fibers" && <span className="nbr-scene-key">Tracejado laranja · aprox. α = {formatInteraction(interactionAlpha, 2)}</span>}
+            {displayMode !== "fibers" && <span className="nbr-scene-key">Tracejado · aprox. α = {formatInteraction(interactionAlpha, 2)}</span>}
           </div>
           <div className="interaction-hint"><MousePointer2 size={14} aria-hidden="true" />Girar · zoom<span>Arraste a seta para cortar</span></div>
         </div>
@@ -164,9 +168,23 @@ export default function InteractionLab() {
           </section>;
         })}
         <div className="interaction-appearance">
-          <RangeControl id="surface-opacity" label="Opacidade das superfícies" symbol="op."
-            value={Math.round(appearance.opacity * 100)} min={0} max={100} step={1} unit="%" signed={false} fractionDigits={0}
-            onChange={value => updateAppearance("opacity", value / 100)} />
+          <div className="interaction-surface-controls">
+            <RangeControl id="surface-opacity" label="Opacidade · fibras" symbol="op."
+              value={Math.round(appearance.opacity * 100)} min={0} max={100} step={1} unit="%" signed={false} fractionDigits={0}
+              onChange={value => updateAppearance("opacity", value / 100)} />
+            {displayMode !== "fibers" && <>
+              <RangeControl id="approximate-surface-opacity" label="Opacidade · aproximado" symbol="op."
+                value={Math.round(appearance.approximateOpacity * 100)} min={0} max={100} step={1} unit="%" signed={false} fractionDigits={0}
+                onChange={value => updateAppearance("approximateOpacity", value / 100)} />
+              <div className="approximate-color-control">
+                <label htmlFor="approximate-surface-color">Cor do aproximado</label>
+                <input id="approximate-surface-color" type="color" value={appearance.approximateColor}
+                  onChange={event => updateAppearance("approximateColor", event.target.value)} />
+                <output htmlFor="approximate-surface-color">{appearance.approximateColor.toUpperCase()}</output>
+              </div>
+            </>}
+            <p className="surface-opacity-note">A opacidade altera o preenchimento 3D. As curvas de corte e a malha auxiliar continuam visíveis para comparação.</p>
+          </div>
           <div className="interaction-toggles">
             <LayerToggle label="Planos e seta de corte" checked={appearance.planes} onChange={value => updateAppearance("planes", value)} />
             <LayerToggle label="Malha (sem recorte)" checked={appearance.wireframe} onChange={value => updateAppearance("wireframe", value)} />
@@ -178,12 +196,13 @@ export default function InteractionLab() {
     </div>
     <div className="slice-chart-grid">
       {axes.map(axis => <InteractionSliceChart key={axis} axis={axis} value={cuts[axis]} cuts={cuts} slice={slices[axis]}
+        approximateColor={appearance.approximateColor}
         displayMode={displayMode} approximateSlice={approximateSlices?.[axis] ?? null} comparison={axis === "n" ? comparison : null}
         active={activeCut === axis} autoScale={autoScale} selected={selection?.point ?? null}
         onActivate={() => setActiveCut(axis)} onInspect={inspect} />)}
     </div>
     <div className="interaction-caption">
-      <span>Mesma cor = mesmo corte por fibras. Laranja tracejado = processo aproximado. Guias finas = outros planos.</span>
+      <span>Mesma cor = mesmo corte por fibras. Tracejado na cor escolhida = processo aproximado. Guias finas = outros planos.</span>
       <span>N ≥ 0 · compressão positiva · uso didático</span>
       <details><summary>Modelo e precisão</summary>
         <p>Dados pré-gerados pelo FlexoPy: 54 níveis de N, 120 orientações, 48 × 72 fibras. Os cortes e as leituras são interpolados na mesma malha triangular do 3D. Não há extrapolação para N &lt; 0.</p>
