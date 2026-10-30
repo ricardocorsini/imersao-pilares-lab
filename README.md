@@ -3,6 +3,26 @@
 Aplicação React + Vite para reunir, em uma única página, as visualizações
 interativas do curso de flexocompressão oblíqua.
 
+## Módulos 13 e 14 — malha poligonal e erros geométricos
+
+**13 · Malha de polígonos** aceita seções retangulares, L, T, trapézio,
+triângulo, um exemplo irregular e coordenadas livres. Defina `nx × ny` ou o
+tamanho-alvo, reproduza o teste pelo centro e inspecione as células aceitas e
+descartadas. Centros sobre o contorno também são aceitos.
+
+**14 · Erros e refinamento da malha** compara área e centroide da malha com os
+valores exatos do contorno. Mostra desvios em mm e %, estudo de resoluções e
+uma sobreposição das regiões em falta e em excesso. Clique nos pontos ou na
+tabela para trocar a resolução. O contorno e a malha são compartilhados entre
+os dois módulos durante a sessão da aba.
+
+Ambos usam o modo aula existente, com gráfico ampliado, controles e cards
+móveis, desenho e histórico de anotações. O modelo aceita polígonos simples,
+maciços e côncavos; valida a entrada antes de aplicá-la. Não recorta células
+nem representa furos. Veja [método, escopo e exemplo da Aula 03](docs/malha-poligonal.md).
+
+Verificação específica: `npm run verify:polygon-mesh`.
+
 ## Versão 0.6 — forças nas fibras e armaduras
 
 O menu **Gráficos** reúne três módulos, preservando os dois anteriores.

@@ -66,4 +66,14 @@ export const LECTURE_MODULES: Record<string, LectureModule> = {
     controls: [block("parameters", "Eixos, origem e forças", ".origin-controls")],
     cards: [block("results", "Resultantes nas duas origens", ".origin-results", 540, "dark"), block("translation", "Contas da translação", ".origin-transform-panel", 580), block("forces", "Contribuição de cada força", ".origin-contributions-panel", 650)],
   },
+  "geracao-malha-poligonal": {
+    graphs: [graph("mesh", "Malha e teste pelo centro", ".polygon-mesh-wrap")],
+    controls: [block("geometry", "Contorno, discretização e aparência", ".polygon-controls"), block("player", "Varredura e animação", ".polygon-player", 480, "dark")],
+    cards: [block("cell", "Decisão da célula selecionada", ".polygon-cell-inspector", 520), block("errors", "Erros de área e centroide", ".polygon-error-summary", 600), block("player", "Controle da varredura", ".polygon-player", 500, "dark"), block("method", "Posição, área e referência", ".polygon-method-note", 500)],
+  },
+  "erros-refinamento-malha": {
+    graphs: [graph("errors", "Erros relativos e refinamento", ".polygon-refinement-wrap"), graph("border", "Borda e centroides", ".polygon-comparison-wrap")],
+    controls: [block("geometry", "Contorno, discretização e aparência", ".polygon-controls"), block("metric", "Erros mostrados no gráfico", ".polygon-chart-mode", 420, "dark")],
+    cards: [block("errors", "Erros de área e centroide", ".polygon-error-summary", 600), block("study", "Tabela de refinamento", ".polygon-refinement-table", 440), block("border", "Contorno e borda discretizada", ".polygon-border-panel", 600, "dark")],
+  },
 };

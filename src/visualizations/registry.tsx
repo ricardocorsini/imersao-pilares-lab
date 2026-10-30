@@ -12,6 +12,8 @@ const InteractionConstructionLab = lazy(() => import("./InteractionConstructionL
 const StrainDomainsLab = lazy(() => import("./StrainDomainsLab"));
 const RadialVerificationLab = lazy(() => import("./RadialVerificationLab"));
 const ReferenceFrameLab = lazy(() => import("./ReferenceFrameLab"));
+const PolygonMeshLab = lazy(() => import("./PolygonMeshLab"));
+const PolygonMeshErrorsLab = lazy(() => import("./PolygonMeshLab").then(module => ({ default: module.PolygonMeshErrorsLab })));
 function InteractionModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Carregando a superfície de interação…</div>}><InteractionLab /></Suspense>;
 }
@@ -44,6 +46,12 @@ function RadialVerificationModule() {
 }
 function ReferenceFrameModule() {
   return <Suspense fallback={<div role="status" className="interaction-loading">Construindo os eixos e a referência da seção…</div>}><ReferenceFrameLab /></Suspense>;
+}
+function PolygonMeshModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Gerando a malha e testando seus centros…</div>}><PolygonMeshLab /></Suspense>;
+}
+function PolygonMeshErrorsModule() {
+  return <Suspense fallback={<div role="status" className="interaction-loading">Comparando os erros e as resoluções…</div>}><PolygonMeshErrorsLab /></Suspense>;
 }
 
 export type VisualizationModule = {
@@ -164,5 +172,23 @@ export const visualizationModules: VisualizationModule[] = [
     title: "Eixos, origem e convenções de sinais",
     model: "Δx · Δy · braços das forças · translação de momentos",
     Component: ReferenceFrameModule,
+  },
+  {
+    id: "geracao-malha-poligonal",
+    number: "13",
+    menuLabel: "Malha de polígonos",
+    chapter: "Geometria e método das fibras",
+    title: "Geração de malha para polígonos",
+    model: "Contorno livre · nx × ny · teste pelo centro",
+    Component: PolygonMeshModule,
+  },
+  {
+    id: "erros-refinamento-malha",
+    number: "14",
+    menuLabel: "Erros e refinamento da malha",
+    chapter: "Conferências geométricas",
+    title: "Área, centroide e refinamento da malha",
+    model: "Contorno exato × malha · eA · ΔC · eC / Lref",
+    Component: PolygonMeshErrorsModule,
   },
 ];
